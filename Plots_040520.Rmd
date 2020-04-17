@@ -1,0 +1,529 @@
+---
+title: "COVID"
+author: "HeidiHanson"
+date: "April 3, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(hrbrthemes)
+library(formattable)
+library(sqldf)
+library(season)
+library(gridExtra)
+library(viridis)
+```
+
+## R COVID HEAT PLOTS 04/03/20
+
+```{r cars}
+ICUSim<-read.csv("X:/PPG/FLAG/FLAGDataHeidi/SPARC/ICU_SimOut.csv")
+ICUSim$Date<-as.Date(ICUSim$Datec)
+ICUSim$RateICULo<-ICUSim$ICLo_Case/ICUSim$AvgAvail
+ICUSim$RateICUHi<-ICUSim$ICHi_Case/ICUSim$AvgAvail
+ICUSim$RateRemEICULo<-ICUSim$ICLo_Case/ICUSim$AvgAvailmElec
+ICUSim$RateREmEICUHi<-ICUSim$ICHi_Case/ICUSim$AvgAvailmElec
+
+FinTblStateFin<-read.csv("X:/PPG/FLAG/FLAGDataHeidi/SPARC/FinTblStateFin.csv")
+StateScoreCard<-read.csv("X:/PPG/FLAG/FLAGDataHeidi/SPARC/StateScorecard20.csv")
+
+
+ICUSim2<-ICUSim%>%
+  mutate(weekday=factor(weekdays(ICUSim$Date,T),levels = rev(c("Mon", "Tue", "Wed", "Thu","Fri", "Sat", "Sun"))))%>%
+  mutate(year=format(ICUSim$Date,'%Y'))%>%
+  mutate(week=as.numeric(format(ICUSim$Date,"%W")))
+
+AL<-subset(ICUSim2,state == ('Alabama'))
+UT<-subset(ICUSim2,state == 'Utah'))
+West<-sqldf('select * from ICUSim2 where state in ("Washington","Oregon", "California","Nevada","Idaho", "Montana", "Wyoming",
+            "Utah","Arizona","Colorado","New Mexico")')
+
+MidWestp<-sqldf('select * from ICUSim2 where state in ("North Dakota","South Dakota", "Nebraska","Kansas","Minnesota", "Iowa", "Missouri","Wisconsin","Illinois","Indiana","Michigan","Ohio")')
+
+South<-sqldf('select * from ICUSim2 where state in ("Texas","Oklahoma", "Arkansas","Louisiana","Mississippi", "Alabama", "Tennessee","Georgia","FLorida","Kentucky","South Carolina","North Carolina", "Virginia", "West Virginia", "Deleware")')
+
+Northeast<-sqldf('select * from ICUSim2 where state in ("New York","Connecticut", "Maine","Massachusetts","New Hampshire",
+                 "Rhode Island","Vermont","New Jersey","Pennsylvania","Maryland")')
+
+WestNE<-sqldf('select state,"Normal" as beds,week,weekday,RateICULo from ICUSim2 where state in ("Washington","Oregon", "California","Nevada","Idaho", "Montana", "Wyoming",
+            "Utah","Arizona","Colorado","New Mexico")
+            Union
+            select state,"RemElec" as beds,week,weekday,RateRemEICULo from ICUSim2 where state in ("Washington","Oregon", "California","Nevada","Idaho", "Montana", "Wyoming",
+            "Utah","Arizona","Colorado","New Mexico")')
+WestNE$StateGr<-paste(WestNE$state," ",WestNE$beds)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r ICUCases, echo=FALSE}
+ggplot(West, aes(x = week, y = weekday, fill = RateICULo)) +
+    viridis::scale_fill_viridis(name="ICU Case:Bed",
+                       option = 'C',
+                       direction = 1,
+                       na.value = "grey93") +
+    geom_tile(color = 'white', size = 0.1) +
+   theme(axis.ticks=element_blank()) +
+  theme(axis.text=element_text(size=5))+
+  theme(panel.border=element_blank())+
+  theme(plot.title=element_text(hjust=0))+
+  theme(strip.text=element_text(hjust=0))+
+  theme(panel.margin.x=unit(0.5, "cm"))+
+    facet_wrap('state', ncol = 2) +
+    scale_x_continuous(
+      expand = c(0, 0),
+      breaks = seq(1, 52, length = 12),
+      labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
+
+```
+
+```{r ICUCases, echo=FALSE}
+ggplot(MidWestp, aes(x = week, y = weekday, fill = RateICULo)) +
+    viridis::scale_fill_viridis(name="ICU Case:Bed",
+                       option = 'C',
+                       direction = 1,
+                       na.value = "grey93") +
+    geom_tile(color = 'white', size = 0.1) +
+   theme(axis.ticks=element_blank()) +
+  theme(axis.text=element_text(size=5))+
+  theme(panel.border=element_blank())+
+  theme(plot.title=element_text(hjust=0))+
+  theme(strip.text=element_text(hjust=0))+
+  theme(panel.margin.x=unit(0.5, "cm"))+
+    facet_wrap('state', ncol = 2) +
+    scale_x_continuous(
+      expand = c(0, 0),
+      breaks = seq(1, 52, length = 12),
+      labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
+
+```
+
+
+```{r ICUREg, echo=FALSE}
+ggplot(NY, aes(x = week, y = weekday, fill = RateICULo)) +
+    viridis::scale_fill_viridis(name="ICU Case:Bed",
+                       option = 'C',
+                       direction = 1,
+                       na.value = "grey93") +
+    geom_tile(color = 'white', size = 0.1) +
+  theme_bw()+
+    facet_wrap('year', ncol = 1) +
+    scale_x_continuous(
+      expand = c(0, 0),
+      breaks = seq(1, 52, length = 12),
+      labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
+
+```
+```{r ICU1, ehcho=FALSE}
+ggplot(MidWestp, aes(x = week, y = weekday, fill = RateICULo)) +
+    viridis::scale_fill_viridis(name="ICU Case:Bed",
+                       option = 'D',
+                       direction = 1,
+                       na.value = "grey93") +
+    geom_tile(color = 'white', size = 0.1) +
+   theme(axis.ticks=element_blank()) +
+  theme(axis.text=element_text(size=5))+
+  theme(panel.border=element_blank())+
+   theme(legend.title=element_text(size=6))+
+  theme(plot.title=element_text(hjust=0,size=6))+
+  theme(strip.text=element_text(hjust=0))+
+  theme(panel.margin.x=unit(0.5, "cm"))+
+    facet_wrap('state', ncol = 3) +
+    scale_x_continuous(
+      expand = c(0, 0),
+      breaks = seq(1, 52, length = 12),
+      labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
+
+
+```
+
+```{r ICUSouth, ehcho=FALSE}
+ggplot(South, aes(x = week, y = weekday, fill = RateICULo)) +
+    viridis::scale_fill_viridis(name="ICU Case:Bed",
+                       option = 'B',
+                       direction = 1,
+                       na.value = "grey93") +
+    geom_tile(color = 'white', size = 0.1) +
+   theme(axis.ticks=element_blank()) +
+  theme(axis.text=element_text(size=5))+
+  theme(panel.border=element_blank())+
+   theme(legend.title=element_text(size=6))+
+  theme(plot.title=element_text(hjust=0,size=6))+
+  theme(strip.text=element_text(hjust=0))+
+  theme(panel.margin.x=unit(0.5, "cm"))+
+    facet_wrap('state', ncol = 3) +
+    scale_x_continuous(
+      expand = c(0, 0),
+      breaks = seq(1, 52, length = 12),
+      labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
+
+
+```
+
+```{r ICUNE, ehcho=FALSE}
+ggplot(Northeast, aes(x = week, y = weekday, fill = RateICULo)) +
+    viridis::scale_fill_viridis(name="ICU Case:Bed",
+                       option = 'B',
+                       direction = 1,
+                       na.value = "grey93") +
+    geom_tile(color = 'white', size = 0.1) +
+   theme(axis.ticks=element_blank()) +
+  theme(axis.text=element_text(size=5))+
+  theme(panel.border=element_blank())+
+   theme(legend.title=element_text(size=6))+
+  theme(plot.title=element_text(hjust=0,size=6))+
+  theme(strip.text=element_text(hjust=0))+
+  theme(panel.margin.x=unit(0.5, "cm"))+
+    facet_wrap('state', ncol = 3) +
+    scale_x_continuous(
+      expand = c(0, 0),
+      breaks = seq(1, 52, length = 12),
+      labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
+
+
+```
+
+```{r ICUComb, ehcho=FALSE}
+AzComp<-sqldf('select * from WestNE where state="Arizona"')
+ggplot(AzComp, aes(x = week, y = weekday, fill = RateICULo)) +
+    viridis::scale_fill_viridis(name="ICU Case:Bed",
+                       option = 'D',
+                       direction = 1,
+                       na.value = "grey93") +
+    geom_tile(color = 'white', size = 0.1) +
+   theme(axis.ticks=element_blank()) +
+  theme(axis.text=element_text(size=5))+
+  theme(panel.border=element_blank())+
+   theme(legend.title=element_text(size=6))+
+  theme(plot.title=element_text(hjust=0,size=6))+
+  theme(strip.text=element_text(hjust=0))+
+  theme(panel.margin.x=unit(0.5, "cm"))+
+    facet_wrap('StateGr', ncol = 3) +
+    scale_x_continuous(
+      expand = c(0, 0),
+      breaks = seq(1, 52, length = 12),
+      labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
+
+UTComp<-sqldf('select * from WestNE where state="Utah"')
+ggplot(UTComp, aes(x = week, y = weekday, fill = RateICULo)) +
+    viridis::scale_fill_viridis(name="ICU Case:Bed",
+                       option = 'C',
+                       direction = 1,
+                       na.value = "grey93") +
+    geom_tile(color = 'white', size = 0.1) +
+   theme(axis.ticks=element_blank()) +
+  theme(axis.text=element_text(size=5))+
+  theme(panel.border=element_blank())+
+   theme(legend.title=element_text(size=6))+
+  theme(plot.title=element_text(hjust=0,size=6))+
+  theme(strip.text=element_text(hjust=0))+
+  theme(panel.margin.x=unit(0.5, "cm"))+
+    facet_wrap('StateGr', ncol = 3) +
+    scale_x_continuous(
+      expand = c(0, 0),
+      breaks = seq(1, 52, length = 12),
+      labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
+
+WYComp<-sqldf('select * from WestNE where state="Wyoming"')
+ggplot(WYComp, aes(x = week, y = weekday, fill = RateICULo)) +
+    viridis::scale_fill_viridis(name="ICU Case:Bed",
+                       option = 'C',
+                       direction = 1,
+                       na.value = "grey93") +
+    geom_tile(color = 'white', size = 0.1) +
+   theme(axis.ticks=element_blank()) +
+  theme(axis.text=element_text(size=5))+
+  theme(panel.border=element_blank())+
+   theme(legend.title=element_text(size=6))+
+  theme(plot.title=element_text(hjust=0,size=6))+
+  theme(strip.text=element_text(hjust=0))+
+  theme(panel.margin.x=unit(0.5, "cm"))+
+    facet_wrap('StateGr', ncol = 3) +
+    scale_x_continuous(
+      expand = c(0, 0),
+      breaks = seq(1, 52, length = 12),
+      labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
+
+WAComp<-sqldf('select * from WestNE where state="Washington"')
+ggplot(WAComp, aes(x = week, y = weekday, fill = RateICULo)) +
+    viridis::scale_fill_viridis(name="ICU Case:Bed",
+                       option = 'C',
+                       direction = 1,
+                       na.value = "grey93") +
+    geom_tile(color = 'white', size = 0.1) +
+   theme(axis.ticks=element_blank()) +
+  theme(axis.text=element_text(size=5))+
+  theme(panel.border=element_blank())+
+   theme(legend.title=element_text(size=6))+
+  theme(plot.title=element_text(hjust=0,size=6))+
+  theme(strip.text=element_text(hjust=0))+
+  theme(panel.margin.x=unit(0.5, "cm"))+
+    facet_wrap('StateGr', ncol = 3) +
+    scale_x_continuous(
+      expand = c(0, 0),
+      breaks = seq(1, 52, length = 12),
+      labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
+
+```
+
+```{r nationalplot, echo=FALSE}
+ICUSim2$ICLo_Case[is.na(ICUSim2$ICLo_Case)] = 0
+ICUSim2$ICHi_Case[is.na(ICUSim2$ICHi_Case)] = 0
+
+National<-sqldf('select week,weekday,sum(AvgAvail) as AvgAvail,sum(AvgAvailmElec) as AvgAvailmElec,sum(ICLo_Case) as ICLo_Case,
+                  sum(ICHi_Case) as ICHi_Case from ICUSim2 where date is not null group by week,weekday')
+
+National$RateICLo_Norm<-National$ICLo_Case/National$AvgAvail
+National$RateICLo_rElec<-National$ICLo_Case/National$AvgAvailmElec
+National$RateICHi_Norm<-National$ICHi_Case/National$AvgAvail
+National$RateICHi_rElec<-National$ICHi_Case/National$AvgAvailmElec
+
+NatPlot<-sqldf('select week,weekday,RateICLo_Norm,"Normal: Low Estimate" as gr from National
+              UNION select week,weekday,RateICLo_rElec,"Remove Elective: Low Estimate" from National
+              UNION select week,weekday,RateICHi_Norm,"Normal: High Estimate" from National
+              UNION select week,weekday,RateICHi_rElec,"Remove Elective: High Estimate" from National')
+
+ggplot(NatPlot, aes(x = week, y = weekday, fill = RateICLo_Norm)) +
+    viridis::scale_fill_viridis(name="ICU Case:Bed",
+                       option = 'C',
+                       direction = 1,
+                       na.value = "grey93") +
+    geom_tile(color = 'white', size = 0.1) +
+   theme(axis.ticks=element_blank()) +
+  theme(axis.text=element_text(size=8))+
+  theme(panel.border=element_blank())+
+   theme(legend.title=element_text(size=8))+
+  theme(plot.title=element_text(hjust=0,size=8))+
+  theme(strip.text=element_text(hjust=0))+
+  theme(panel.margin.x=unit(0.5, "cm"))+
+    facet_wrap('gr', ncol = 2) +
+    scale_x_continuous(
+      expand = c(0, 0),
+      breaks = seq(1, 52, length = 12),
+      labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
+```
+
+``` {r Joe Plot, echo=False}
+library(ggthemes)
+library(extrafont)
+library(scales)
+
+StateAbrev<-read.csv('X:/PPG/FLAG/FLAGDataHeidi/SPARC/StateAbrev.csv')
+StateAbrev$State<-str_trim(StateAbrev$State,side="both")
+##There are two state columns in this table, so I"m deleting one of them
+FinTblStateFin<-FinTblStateFin[-c(2)]
+
+FinTblStateFin<-sqldf('select f.*,a.Ab as st from FinTblStateFin as f join StateAbrev as a on f.STNAME=a.State')
+FinTblStatePlot<-sqldf('select f.*,s.[Total.Hospital.Beds] as TotBeds, s.[Total.ICU.Beds] as ICUBeds
+                        from FinTblStateFin as f join StateScoreCard as s on f.St=s.State')
+
+StateAvail<-sqldf('select distinct state,AvgAvail,AvgAvailmElec,PropAvailNorm,PropAvailmElec from ICUSim2')
+StateAvail$PropElect<-StateAvail$PropAvailmElec-StateAvail$PropAvailNorm
+StateAvail$PropEmerg<-1-StateAvail$PropElec-StateAvail$PropAvailNorm
+##746170 and 85489
+
+StateAvailStack<-sqldf('select state,PropAvailNorm As Proportion,"Normally Available" as Cat from StateAvail where state not in ("District of Columbia")
+                        UNION select state,PropElect,"ELective Surgeries" from StateAvail where state not in ("District of Columbia")
+                        UNION select state,PropEmerg,"Emergency Surgeries" from StateAvail where state not in ("District of Columbia")')
+
+fill <- c("#5F9EA0", "#E1B378")
+pl<-ggplot()+theme_economist() + scale_fill_economist()+
+  theme(plot.title=element_text(family="OfficinaSanITC-Book"),
+        text=element_text(family="OfficinaSanITC-Book")) +
+  geom_bar(aes(y = Proportion, x = state, fill = Cat), data = StateAvailStack,stat="identity")+
+  theme(legend.position="bottom", legend.direction="horizontal",
+        legend.title = element_blank()) +
+  labs(x="State", y="Proportion") +
+  ggtitle("Distribution of Bed Availability by State")
+pl
+
+##Join to POP Table to Weight by Pop Size
+StateAvail<-sqldf('select s.*,f.TOT_POP from StateAvail as s join FinTblStateFin as f on s.state=f.STNAME')
+WgtPropAvail<-sqldf('select sum(PropAvailNorm*TOT_POP)/327167434 from StateAvail')
+##0.441
+WgtPropAvailmElec<-sqldf('select sum(PropAvailmElec*TOT_POP)/327167434 from StateAvail')
+##0.586; Elective 0.145
+##0.414 Emergent
+
+
+##Check with Harvard Counts
+StateScoreCard$PropAvail<-StateScoreCard$Available.ICU.Beds/StateScoreCard$Total.ICU.Beds
+StateScoreCardPlt<-sqldf('select State,PropAvail,"Available" as Cat from StateScoreCard
+                          Union select State,1-PropAvail,"Occupied" as cat from StateScoreCard')
+
+pl<-ggplot()+theme_economist() + scale_fill_economist()+
+  theme(plot.title=element_text(family="OfficinaSanITC-Book"),
+        text=element_text(family="OfficinaSanITC-Book")) +
+  geom_bar(aes(y = PropAvail, x = State, fill = Cat), data = StateScoreCardPlt,stat="identity")+
+  theme(legend.position="bottom", legend.direction="horizontal",
+        legend.title = element_blank()) +
+  labs(x="State", y="Proportion") +
+  ggtitle("Compare to Harvard Estimates")
+pl
+
+
+NationalSim<-sqldf('select day,sum(countICLo) as ICLo, sum(CountICHi) as ICHi from ICUSim2 group by day' )
+##Check Bounds for plot
+max(NationalSim$ICHi)
+##1299706
+
+#7 day lag to count the people that will actually be in the hospital
+NatlionalSimL<-NationalSim
+NatlionalSimL$ICLo_l<-NationalSim$ICLo+lag(NationalSim$ICLo,6)+lag(NationalSim$ICLo,5)+lag(NationalSim$ICLo,4)+
+  lag(NationalSim$ICLo,3)+lag(NationalSim$ICLo,2)+lag(NationalSim$ICLo,1)
+
+NatlionalSimL$ICHi_l<-NationalSim$ICHi+lag(NationalSim$ICHi,6)+lag(NationalSim$ICHi,5)+lag(NationalSim$ICHi,4)+
+  lag(NationalSim$ICHi,3)+lag(NationalSim$ICHi,2)+lag(NationalSim$ICHi,1)
+
+NatlionalSimL$ICLo_l[NatlionalSimL$day==1]<-NatlionalSimL$ICLo
+NatlionalSimL$ICHi_l[NatlionalSimL$day==1]<-NatlionalSimL$ICHi
+NatlionalSimL$ICLo_l[NatlionalSimL$day==2]<-NatlionalSimL$ICLo+1328
+NatlionalSimL$ICHi_l[NatlionalSimL$day==2]<-NatlionalSimL$ICHi+3169
+NatlionalSimL$ICLo_l[NatlionalSimL$day==3]<-NatlionalSimL$ICLo+2656
+NatlionalSimL$ICHi_l[NatlionalSimL$day==3]<-NatlionalSimL$ICHi+6338
+NatlionalSimL$ICLo_l[NatlionalSimL$day==4]<-NatlionalSimL$ICLo+3984
+NatlionalSimL$ICHi_l[NatlionalSimL$day==4]<-NatlionalSimL$ICHi+9507
+NatlionalSimL$ICLo_l[NatlionalSimL$day==5]<-NatlionalSimL$ICLo+5316
+NatlionalSimL$ICHi_l[NatlionalSimL$day==5]<-NatlionalSimL$ICHi+12676
+NatlionalSimL$ICLo_l[NatlionalSimL$day==6]<-NatlionalSimL$ICLo+6644
+NatlionalSimL$ICHi_l[NatlionalSimL$day==6]<-NatlionalSimL$ICHi+15845
+
+
+
+##Create Points on Plot for Avail, Elect, Emerg.  I'm multiplying by the Bounds to fill the whole plot
+NationalSim$Line2<-(0.145+0.441)*85489
+NationalSim$Line3<-1*85489
+NationalSim$Line1<-0.441*85489
+NationalSim$Line4<-90000
+  
+##CreatePlotFile
+NationalPlot<-sqldf('select day,Line1 as PLVal,"Normally Available Beds" as Grp from NationalSim
+                    UNION select day,Line2,"Elective Surgery Beds" from NationalSim
+                    UNION select day,Line3, "Emergent Care Beds" from NationalSim
+                    UNION select day,Line4, "Over Capacity" from NationalSim')
+NationalLine<-sqldf('select day,ICLo, "COVID-19 Beds: Low Estimate" as cases from NationalSim
+                    UNION select day,ICHi, "COVID-19 Beds: High Estimate" from NationalSim')
+
+NationalLineLag<-sqldf('select day,ICLo_l, "COVID-19 Beds: Low Estimate" as cases from NatlionalSimL
+                    UNION select day,ICHi_l, "COVID-19 Beds: High Estimate" from NatlionalSimL')
+
+
+##Cumulativeplot
+b<-ggplot(NationalLine, aes(x=day,y=ICLo,fill=cases))
+b+geom_point(color="red")
+
+NationalLine<-NationalLine %>% group_by(cases) %>% mutate(ICLoCase=ICLo-lag(ICLo))
+NationalLineLag<-NationalLineLag %>% group_by(cases) %>% mutate(ICLoCase=ICLo_l-lag(ICLo_l))
+
+NationalLineLag$ICLoCase[NationalLineLag$day==7 & NationalLineLag$cases=="COVID-19 Beds: Low Estimate"]<-1328
+NationalLineLag$ICLoCase[NationalLineLag$day==7 & NationalLineLag$cases=="COVID-19 Beds: High Estimate"]<-3169
+
+##CasePlot
+b<-ggplot(NationalLine, aes(x=day,y=ICLoCase))
+b+geom_point(aes(colour = factor(cases)))+ scale_colour_manual(values = c("maroon","red")) + annotate("rect", xmin = -Inf, xmax = Inf, ymin = 50097, ymax = 90000, fill = "red", alpha = .1, color = NA) + annotate("rect", xmin = -Inf, xmax = Inf, ymin = 90000, ymax = Inf, fill = "red", alpha = .1, color = NA) + annotate("rect", xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = 37701, fill = "green", alpha = .1, color = NA)+ annotate("rect", xmin = -Inf, xmax = Inf, ymin = 37701, ymax = 50097, fill = "blue", alpha = .1, color = NA)+theme(legend.position = "bottom", legend.title = element_blank(), plot.title = element_text(hjust = 0.5))+annotate("text", x=90, y=37701, label="Normal Availability") + annotate("text", x=84,y=50097, label="Removal of Elective Surgery")+ggtitle("Number of New ICU Admits  \n when 5% of the Population is Infected and Doubling TIme is 5.2")+xlab("Time")+ylab("ICU Beds")
+
+
+b<-ggplot(NationalLineLag, aes(x=day,y=ICLoCase))
+b+geom_point(aes(colour = factor(cases)))+ scale_colour_manual(values = c("maroon","red"))+ annotate("rect", xmin = -Inf, xmax = Inf, ymin = 50097, ymax = 90000, fill = "red", alpha = .1, color = NA) + annotate("rect", xmin = -Inf, xmax = Inf, ymin = 90000, ymax = Inf, fill = "red", alpha = .1, color = NA) + annotate("rect", xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = 37701, fill = "green", alpha = .1, color = NA)+ annotate("rect", xmin = -Inf, xmax = Inf, ymin = 37701, ymax = 50097, fill = "blue", alpha = .1, color = NA)+theme(legend.position = "bottom", legend.title = element_blank(), plot.title = element_text(hjust = 0.5))+annotate("text", x=93, y=35000, label="Normal Availability") + annotate("text", x=92,y=75000, label="Removal of Elective") + annotate("text", x=93,y=59000, label="Surgery")+ggtitle("Number of ICU Patients  \n when 5% of the Population is Infected and Doubling TIme is 5.2")+xlab("Time")+ylab("ICU Beds")
+
+##NOT WORKING
+##ggplot()+
+##geom_line(NationalPlot, aes(x=day,y=PLVal,group=Grp))+
+##    geom_area(aes(fill=Grp),position="identity") +
+##    scale_fill_manual(values = alpha(c("#458800","#ff4500","#000080","#FFFFFF"), .25)) +
+##    labs(
+##        title="National Figure",
+##        y="Beds", x="Day"
+##    ) +
+ ##geom_line(NationalPlot, aes(x=day,y=ICLoCase,fill=cases))
+
+
+
+
+```
+``` {r Counts, echo=False}
+##NUMBERS FOR PAPER
+inpat<-read.csv("X:/PPG/FLAG/FLAGDataHeidi/SPARC/inpatdays_avgs.csv")
+ICU<-read.csv("X:/PPG/FLAG/FLAGDataHeidi/SPARC/ICUdays_avgs.csv")
+inpat<-sqldf('select * from inpat where state_name != "Unkown"')
+
+inpat_mo<-sqldf('select month,sum(all_avg) as all_avg, sum(elc_avg) as elc_avg from inpat group by month')
+ICU_mo<-sqldf('select month,sum(all_avg) as all_avg, sum(elc_avg) as elc_avg from ICU group by month')
+
+summary(inpat_mo$all_avg)
+summary(ICU_mo$all_avg)
+
+BedCnts<-sqldf('select distinct Name,AvgAvail,AvgAvailmElec,PropAvailmElec,PropAvailNorm,AvgICUBed,AvgICUBedElec from ICUSim2')
+summary(BedCnts$AvgAvail)
+summary(BedCnts$AvgAvailmElec)
+
+FinTblStateFin_wCalc<-read.csv("X:/PPG/FLAG/FLAGDataHeidi/SPARC/FinTblStateFin_wCalc.csv")
+sum(FinTblStateFin_wCalc$HospLo05Cnt_100)
+sum(FinTblStateFin_wCalc$HospHi05Cnt_100)
+sum(FinTblStateFin_wCalc$ICULo05Cnt_100)
+sum(FinTblStateFin_wCalc$ICUHi05Cnt_100)
+
+sum(FinTblStateFin_wCalc$HospLo01Cnt_100)
+sum(FinTblStateFin_wCalc$HospHi01Cnt_100)
+sum(FinTblStateFin_wCalc$ICULo01Cnt_100)
+sum(FinTblStateFin_wCalc$ICUHi01Cnt_100)
+
+sum(FinTblStateFin_wCalc$HospLo10Cnt_100)
+sum(FinTblStateFin_wCalc$HospHi10Cnt_100)
+sum(FinTblStateFin_wCalc$ICULo10Cnt_100)
+sum(FinTblStateFin_wCalc$ICUHi10Cnt_100)
+
+summary(FinTblStateFin_wCalc$HospLo05Cnt_100)
+summary(FinTblStateFin_wCalc$HospHi05Cnt_100)
+summary(FinTblStateFin_wCalc$ICULo05Cnt_100)
+summary(FinTblStateFin_wCalc$ICUHi05Cnt_100)
+
+summary(FinTblStateFin_wCalc$HospLo01Cnt_100)
+summary(FinTblStateFin_wCalc$HospHi01Cnt_100)
+summary(FinTblStateFin_wCalc$ICULo01Cnt_100)
+summary(FinTblStateFin_wCalc$ICUHi01Cnt_100)
+
+summary(FinTblStateFin_wCalc$HospLo10Cnt_100)
+summary(FinTblStateFin_wCalc$HospHi10Cnt_100)
+summary(FinTblStateFin_wCalc$ICULo10Cnt_100)
+summary(FinTblStateFin_wCalc$ICUHi10Cnt_100)
+
+##Total population
+sum(FinTblStateFin_wCalc$TOT_POP)
+
+##Total hospital beds from Harvard Fild
+sum(StateScoreCard$Total.Hospital.Beds)
+summary(StateScoreCard$Total.Hospital.Beds)
+
+##Total ICU Beds from Harard File
+sum(StateScoreCard$Total.ICU.Beds)
+summary(StateScoreCard$Total.ICU.Beds)
+
+##ICU Beds from Our Estimates
+sum(StateAvail$AvgAvail)
+summary(StateAvail$AvgAvail)
+
+ElecICUData<-read.csv('X:/PPG/FLAG/FLAGDataHeidi/SPARC/ElecICUData.csv')
+sum(ElecICUData$AvgICUBed)
+
+ElecHospData<-read.csv('X:/PPG/FLAG/FLAGDataHeidi/SPARC/ElecHospData.csv')
+summary(ElecHospData$NumberAvail)
+summary(ElecHospData$NumberAvailmElec)
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
